@@ -1,6 +1,6 @@
 # Broadcast Receiver
 
-## Implicit
+## Dynamic Receivers
 
 ### Create a class e.g CustomBroadcastReceiver
 
@@ -10,16 +10,19 @@ public class CustomBroadcastReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        if (Intent.ACTION_BOOT_COMPLETED.equals(intent.getAction())) {
-            // This message will be displayed when the device boot is finished
-            Toast.makeText(context, "Boot completed.", Toast.LENGTH_SHORT).show();
-        }
 
         if (ConnectivityManager.CONNECTIVITY_ACTION.equals(intent.getAction())) {
-            
-            // This message will be displayed when the device internet connection is changed
-            // It will not work for apps targeting N and higher
-            Toast.makeText(context, "Connectivity changed.", Toast.LENGTH_SHORT).show();
+
+            boolean noConnectivity = intent.getBooleanExtra(
+                    ConnectivityManager.EXTRA_NO_CONNECTIVITY, false
+            );
+
+            if (noConnectivity) {
+                Toast.makeText(context, "Disconnected", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(context, "Connected", Toast.LENGTH_SHORT).show();
+            }
+
         }
 
     }
@@ -28,27 +31,71 @@ public class CustomBroadcastReceiver extends BroadcastReceiver {
 
 ```
 
-### In the AndroidManifest file
+### In the activity you want to call the BroadcastReceiver
 
-Put the following xml code before the `<application></application>` tag.
+```java
 
-```xml
+public class MainActivity extends AppCompatActivity {
 
-<uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    // Declare the class.
+    private CustomBroadcastReceiver customBroadcastReceiver;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        // Initialize the class.
+        customBroadcastReceiver = new CustomBroadcastReceiver();
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        // Set the action you want to listen to. In this case, checking the internet connection.
+        IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
+        // Register the filter (action).
+        registerReceiver(customBroadcastReceiver, filter);
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        // Unregister the BroadcastReceiver, to save memory, etc.
+        unregisterReceiver(customBroadcastReceiver);
+    }
+
+}
 
 ```
 
-And the following one after the `<activity></activity>` tag.
+**Note:** This will only work when you are in the activity. If you want to listen to the action in all activities implement the
+following code in your application class. When extending from `Application`, the action will be listened to as long as the app 
+is running.
 
-```xml
+```Java
 
-<receiver android:name=".CustomBroadcastReceiver" android:exported="true">
-    <intent-filter>
-        <action android:name="android.intent.action.BOOT_COMPLETED" />
-        <action android:name="android.net.conn.CONNECTIVITY_CHANGE" />
-    </intent-filter>
-</receiver>
+public class MyApplication extends Application {
+
+    private CustomBroadcastReceiver customBroadcastReceiver;
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        customBroadcastReceiver = new CustomBroadcastReceiver();
+        registerConnectivityReceiver();
+    }
+
+    public void registerConnectivityReceiver() {
+        IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
+        registerReceiver(customBroadcastReceiver, filter);
+    }
+
+    public void unregisterConnectivityReceiver() {
+        unregisterReceiver(customBroadcastReceiver);
+    }
+
+}
 
 ```
 
-**Note:** `android.net.conn.CONNECTIVITY_CHANGE`  is deprecated for apps targeting N and higher.
+Finally, put `android:name=".MyApplication"` in your AndroidManifest file, inside the `<application></application>` tag.
