@@ -68,7 +68,7 @@ public class MainActivity extends AppCompatActivity {
 
 ```
 
-**Note:** This will only work when you are in the activity. If you want to listen to the action in all activities implement the
+**Note:** This will only work when you are in the activity. If you want to listen to the action in all activities, implement the
 following code in your application class. When extending from `Application`, the action will be listened to as long as the app 
 is running.
 
