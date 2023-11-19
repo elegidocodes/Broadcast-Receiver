@@ -13,3 +13,6 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+First-Broadcast-Receiver
+Second-Broadcast-Receiver
